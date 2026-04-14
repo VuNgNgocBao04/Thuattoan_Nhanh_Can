@@ -157,13 +157,11 @@ def branch_and_bound(start: str, goal: str, graph: Dict[str, List[Tuple[str, int
 
             g_v = u_state.g + edge_cost
             f_v = g_v + h[v]
+            child_state = State(node=v, g=g_v, f=f_v, parent=u_state)
+            child_records.append((v, edge_cost, h[v], g_v, child_state))
 
-            if g_v <= best_cost:
-                child_state = State(node=v, g=g_v, f=f_v, parent=u_state)
-                child_records.append((v, edge_cost, h[v], g_v, child_state))
-
-        child_records.sort(key=lambda item: item[4].f)
-        L1 = [item[4] for item in child_records]
+        sorted_child_records = sorted(child_records, key=lambda item: item[4].f)
+        L1 = [item[4] for item in sorted_child_records]
 
         # Buoc 6: Chuyen L1 vao dau L
         L = L1 + L

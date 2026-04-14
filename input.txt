@@ -19,7 +19,7 @@ A D 7
 A E 13
 A F 20
 C H 6
-H D 8
+D H 8
 H K 5
 D E 4
 E K 4
