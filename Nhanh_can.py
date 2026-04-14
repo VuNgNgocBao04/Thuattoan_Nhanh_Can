@@ -147,7 +147,7 @@ def branch_and_bound(start: str, goal: str, graph: Dict[str, List[Tuple[str, int
             step += 1
             continue
 
-        # Buoc 4 + 5: Sinh L1 va sap theo f tang dan
+        # Buoc 4: Sinh L1 va sap theo f tang dan
         child_records: List[Tuple[str, int, int, int, State]] = []
         for v, edge_cost in graph.get(u_state.node, []):
             if v not in h:
@@ -163,7 +163,7 @@ def branch_and_bound(start: str, goal: str, graph: Dict[str, List[Tuple[str, int
         sorted_child_records = sorted(child_records, key=lambda item: item[4].f)
         L1 = [item[4] for item in sorted_child_records]
 
-        # Buoc 6: Chuyen L1 vao dau L
+        # Buoc 5: Chuyen L1 vao dau L
         L = L1 + L
 
         l1_str = format_state_list(L1)
@@ -198,7 +198,7 @@ def branch_and_bound(start: str, goal: str, graph: Dict[str, List[Tuple[str, int
             )
         step += 1
 
-    # Buoc 7 + 8: Truy vet va in ket qua
+    # Buoc 6: Truy vet va in ket qua
     best_path = reconstruct_path(best_goal_state)
     write_table(output_file, rows, best_path, best_cost)
 
