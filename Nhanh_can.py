@@ -108,7 +108,7 @@ def write_table(output_file: str, rows: List[Dict[str, str]], best_path: List[st
 
 
 def branch_and_bound(start: str, goal: str, graph: Dict[str, List[Tuple[str, int]]], h: Dict[str, int], output_file: str) -> None:
-    # Buoc 1: Khoi tao
+ 
     start_state = State(node=start, g=0, f=h[start], parent=None)
     L: List[State] = [start_state]
     best_cost = inf
@@ -116,11 +116,11 @@ def branch_and_bound(start: str, goal: str, graph: Dict[str, List[Tuple[str, int
     rows: List[Dict[str, str]] = []
     step = 1
 
-    # Buoc 2: Lap tim kiem
+
     while L:
         u_state = L.pop(0)
 
-        # Buoc 3: Kiem tra trang thai dich
+    
         if u_state.node == goal:
             if u_state.g <= best_cost:
                 best_cost = u_state.g
@@ -147,7 +147,6 @@ def branch_and_bound(start: str, goal: str, graph: Dict[str, List[Tuple[str, int
             step += 1
             continue
 
-        # Buoc 4: Sinh L1 va sap theo f tang dan
         child_records: List[Tuple[str, int, int, int, State]] = []
         for v, edge_cost in graph.get(u_state.node, []):
             if v not in h:
@@ -163,7 +162,7 @@ def branch_and_bound(start: str, goal: str, graph: Dict[str, List[Tuple[str, int
         sorted_child_records = sorted(child_records, key=lambda item: item[4].f)
         L1 = [item[4] for item in sorted_child_records]
 
-        # Buoc 5: Chuyen L1 vao dau L
+     
         L = L1 + L
 
         l1_str = format_state_list(L1)
@@ -198,7 +197,7 @@ def branch_and_bound(start: str, goal: str, graph: Dict[str, List[Tuple[str, int
             )
         step += 1
 
-    # Buoc 6: Truy vet va in ket qua
+
     best_path = reconstruct_path(best_goal_state)
     write_table(output_file, rows, best_path, best_cost)
 
