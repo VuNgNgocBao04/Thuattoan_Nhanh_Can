@@ -67,37 +67,44 @@ def reconstruct_path(state: Optional[State]) -> List[str]:
 
 
 def format_state_list(states: List[State]) -> str:
-    return ",".join(f"{s.node}{s.f}" for s in states)
+    return ", ".join(f"{s.node}({s.f})" for s in states)
+
+
+def can_stop_with_optimal(frontier: List[State], best_cost: float) -> bool:
+    if best_cost == inf:
+        return False
+    return all(state.f >= best_cost for state in frontier)
 
 
 def write_table(output_file: str, rows: List[Dict[str, str]], best_path: List[str], best_cost: float) -> None:
-    columns = [
-        ("TT", 4),
-        ("TTK", 36),
-        ("k(u,v)", 8),
-        ("h(v)", 6),
-        ("g(v)", 6),
-        ("f(v)", 6),
-        ("DS L1", 24),
-        ("Danh sach L", 36),
-    ]
+    columns = ["Bước", "TT", "TTK", "k(u,v)", "h(v)", "g(v)", "f(v)", "DS L1", "Danh sách L"]
+
+    widths: Dict[str, int] = {col: len(col) for col in columns}
+    for row in rows:
+        for col in columns:
+            widths[col] = max(widths[col], len(row.get(col, "")))
+
+    def border_line() -> str:
+        return "+" + "+".join("-" * (widths[col] + 2) for col in columns) + "+"
 
     def fmt_row(data: Dict[str, str]) -> str:
-        return " | ".join(data.get(name, "").ljust(width) for name, width in columns)
+        return "| " + " | ".join(data.get(col, "").ljust(widths[col]) for col in columns) + " |"
 
     with open(output_file, "w", encoding="utf-8") as out:
-        out.write(fmt_row({name: name for name, _ in columns}) + "\n")
-        out.write("-" * (sum(width for _, width in columns) + 3 * (len(columns) - 1)) + "\n")
+        out.write(border_line() + "\n")
+        out.write(fmt_row({name: name for name in columns}) + "\n")
+        out.write(border_line() + "\n")
 
         for row in rows:
             out.write(fmt_row(row) + "\n")
+        out.write(border_line() + "\n")
 
-        out.write("\n===== KET QUA =====\n")
+        out.write("\n===== KẾT QUẢ =====\n")
         if best_path:
-            out.write("Duong di toi uu: " + " -> ".join(best_path) + "\n")
-            out.write(f"Tong chi phi: {int(best_cost)}\n")
+            out.write("Đường đi từ Trạng thái đầu => Trạng thái kết thúc: " + " -> ".join(best_path) + "\n")
+            out.write(f"Chi phí: {int(best_cost)}\n")
         else:
-            out.write("Khong tim thay duong di\n")
+            out.write("Không tìm thấy đường đi\n")
 
 
 def branch_and_bound(start: str, goal: str, graph: Dict[str, List[Tuple[str, int]]], h: Dict[str, int], output_file: str) -> None:
@@ -107,6 +114,7 @@ def branch_and_bound(start: str, goal: str, graph: Dict[str, List[Tuple[str, int
     best_cost = inf
     best_goal_state: Optional[State] = None
     rows: List[Dict[str, str]] = []
+    step = 1
 
     # Buoc 2: Lap tim kiem
     while L:
@@ -119,11 +127,24 @@ def branch_and_bound(start: str, goal: str, graph: Dict[str, List[Tuple[str, int
                 best_goal_state = u_state
                 rows.append(
                     {
+                        "Bước": str(step),
                         "TT": u_state.node,
-                        "TTK": f"TTKT, tim duoc duong di tam thoi, do dai {u_state.g}",
-                        "Danh sach L": format_state_list(L),
+                        "TTK": f"TTKT, tìm được đường đi chi phí {u_state.g}",
+                        "Danh sách L": format_state_list(L),
                     }
                 )
+
+            if can_stop_with_optimal(L, best_cost):
+                rows.append(
+                    {
+                        "Bước": str(step),
+                        "TTK": "Dừng: đã tìm được đường đi tối ưu",
+                        "Danh sách L": format_state_list(L),
+                    }
+                )
+                break
+
+            step += 1
             continue
 
         # Buoc 4 + 5: Sinh L1 va sap theo f tang dan
@@ -153,17 +174,20 @@ def branch_and_bound(start: str, goal: str, graph: Dict[str, List[Tuple[str, int
         if not child_records:
             rows.append(
                 {
+                    "Bước": str(step),
                     "TT": u_state.node,
-                    "TTK": "Khong co trang thai con hop le",
+                    "TTK": "Không có trạng thái con hợp lệ",
                     "DS L1": "-",
-                    "Danh sach L": l_str,
+                    "Danh sách L": l_str,
                 }
             )
+            step += 1
             continue
 
         for index, (v, edge_cost, h_v, g_v, child_state) in enumerate(child_records):
             rows.append(
                 {
+                    "Bước": str(step) if index == 0 else "",
                     "TT": u_state.node if index == 0 else "",
                     "TTK": v,
                     "k(u,v)": str(edge_cost),
@@ -171,9 +195,10 @@ def branch_and_bound(start: str, goal: str, graph: Dict[str, List[Tuple[str, int
                     "g(v)": str(g_v),
                     "f(v)": str(child_state.f),
                     "DS L1": l1_str if index == 0 else "",
-                    "Danh sach L": l_str if index == 0 else "",
+                    "Danh sách L": l_str if index == 0 else "",
                 }
             )
+        step += 1
 
     # Buoc 7 + 8: Truy vet va in ket qua
     best_path = reconstruct_path(best_goal_state)
